@@ -393,178 +393,102 @@ body {
         </div>
     </div>
     <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const passwordInput = document.querySelector("#password");
-    const toggleButton = document.querySelector(".toggle-password");
-    const loginForm = document.querySelector("#loginForm");
-    const popup = document.querySelector("#loading-popup");
-    const popupContent = popup.querySelector(".popup-content");
-    let toggleTimeout;
+ document.addEventListener("DOMContentLoaded", function () {
+            const passwordInput = document.querySelector("#password");
+            const toggleButton = document.querySelector(".toggle-password");
+            const loginForm = document.querySelector("#loginForm");
+            const popup = document.querySelector("#loading-popup");
+            const popupContent = popup.querySelector(".popup-content");
+            let toggleTimeout;
 
-    function generateToken(length = 32) {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        return Array.from(crypto.getRandomValues(new Uint8Array(length)))
-            .map(x => chars[x % chars.length])
-            .join('');
-    }
+            function generateToken(length = 32) {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                return Array.from(crypto.getRandomValues(new Uint8Array(length)))
+                    .map(x => chars[x % chars.length])
+                    .join('');
+            }
 
-    toggleButton.addEventListener("click", function () {
-        clearTimeout(toggleTimeout);
-        passwordInput.setAttribute("type", "text");
-        this.querySelector("svg").style.fill = "#667eea";
-        
-        toggleTimeout = setTimeout(() => {
-            passwordInput.setAttribute("type", "password");
-            this.querySelector("svg").style.fill = "#a0aec0";
-        }, 500);
-    });
-
-    loginForm.addEventListener("submit", function (e) {
-        e.preventDefault();
-        const username = document.querySelector("#username").value;
-        const password = passwordInput.value;
-
-        if (!username || !password) {
-            if (!username) document.querySelector("#username").classList.add("error");
-            if (!password) passwordInput.classList.add("error");
-            return;
-        }
-
-        popup.classList.add("visible");
-
-        setTimeout(() => {
-            const token = generateToken();
-            popupContent.innerHTML = `
-                <div class="success-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                </div>
-                <p class="loading-text">You're in! Welcome back!</p>
-                <div class="token-container">
-                    <p style="font-size: 0.9rem; color: #4a5568;">Your access token:</p>
-                    <div class="token-text">${token}</div>
-                    <button class="copy-button" id="copyTokenBtn">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
-                        </svg>
-                        Copy Token & Close
-                    </button>
-                    <div class="copied-feedback">Token copied!</div>
-                </div>
-            `;
-
-            // Add event listener for copy button after creating it
-            const copyButton = document.getElementById('copyTokenBtn');
-            copyButton.addEventListener('click', () => copyTokenAndClose(token));
-        }, 2000);
-    });
-
-    document.querySelectorAll(".input-field").forEach((input) => {
-        input.addEventListener("input", function () {
-            this.classList.remove("error");
-        });
-    });
-});
-
-unction copyTokenAndClose(token) {
-    // First try using the Clipboard API
-    const copyWithAPI = () => {
-        return navigator.clipboard.writeText(token);
-    };
-
-    // Fallback method using a temporary textarea
-    const copyWithFallback = () => {
-        return new Promise((resolve, reject) => {
-            try {
-                const textarea = document.createElement('textarea');
-                textarea.value = token;
-                // Make the textarea invisible but still technically on-screen
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
+            toggleButton.addEventListener("click", function () {
+                clearTimeout(toggleTimeout);
+                passwordInput.setAttribute("type", "text");
+                this.querySelector("svg").style.fill = "#667eea";
                 
-                const success = document.execCommand('copy');
-                document.body.removeChild(textarea);
-                
-                if (success) {
-                    resolve();
-                } else {
-                    reject(new Error('execCommand copy failed'));
+                toggleTimeout = setTimeout(() => {
+                    passwordInput.setAttribute("type", "password");
+                    this.querySelector("svg").style.fill = "#a0aec0";
+                }, 500);
+            });
+
+            loginForm.addEventListener("submit", function (e) {
+                e.preventDefault();
+                const username = document.querySelector("#username").value;
+                const password = passwordInput.value;
+
+                if (!username || !password) {
+                    if (!username) document.querySelector("#username").classList.add("error");
+                    if (!password) passwordInput.classList.add("error");
+                    return;
                 }
-            } catch (err) {
-                reject(err);
-            }
-        });
-    };
 
-    // Try Clipboard API first, fall back to execCommand
-    (async () => {
-        try {
-            await copyWithAPI();
-        } catch (primaryError) {
-            try {
-                await copyWithFallback();
-            } catch (fallbackError) {
-                showErrorMessage('Unable to copy token. Please manually select and copy it.');
-                // Make token selectable for manual copying
-                makeTokenSelectable();
-                return;
-            }
-        }
-        
-        // If we get here, the copy succeeded
-        const feedback = document.querySelector('.copied-feedback');
-        feedback.classList.add('visible');
-        
-        setTimeout(() => {
-            try {
-                window.close();
-            } catch (e) {
-                // If window.close() fails, show the manual close message
-                const popupContent = document.querySelector('.popup-content');
-                if (popupContent) {
+                popup.classList.add("visible");
+
+                setTimeout(() => {
+                    const token = generateToken();
                     popupContent.innerHTML = `
                         <div class="success-icon">
-                            <svg fill="#F4FBFF" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M3.293,20.707a1,1,0,0,1,0-1.414L17.586,5H12a1,1,0,0,1,0-2h8a1,1,0,0,1,1,1v8a1,1,0,0,1-2,0V6.414L4.707,20.707a1,1,0,0,1-1.414,0Z"/>
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </div>
-                        <p class="loading-text" style="font-size: 0.9rem; margin-top: 0.5rem;">
-                            Token copied! Please manually close the pop-up by clicking the 'X' icon in the top-right corner
-                        </p>
+                        <p class="loading-text">You're in! Welcome back!</p>
+                        <div class="token-container">
+                            <p style="font-size: 0.9rem; color: #4a5568;">Your access token:</p>
+                            <div class="token-text">${token}</div>
+                            <button class="copy-button" onclick="copyTokenAndClose('${token}')">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                                </svg>
+                                Copy Token & Close
+                            </button>
+                            <div class="copied-feedback">Token copied!</div>
+                        </div>
                     `;
-                }
-            }
-        }, 1000);
-    })();
-}
+                }, 2000);
+            });
 
-// Helper function to show error message
-function showErrorMessage(message) {
-    const feedback = document.querySelector('.copied-feedback');
-    feedback.textContent = message;
-    feedback.style.color = '#e53e3e';
-    feedback.classList.add('visible');
-}
+            document.querySelectorAll(".input-field").forEach((input) => {
+                input.addEventListener("input", function () {
+                    this.classList.remove("error");
+                });
+            });
+        });
 
-// Helper function to make token selectable
-function makeTokenSelectable() {
-    const tokenContainer = document.querySelector('.token-text');
-    if (tokenContainer) {
-        tokenContainer.style.userSelect = 'text';
-        tokenContainer.style.cursor = 'text';
-        // Add a hint for users
-        const hint = document.createElement('p');
-        hint.textContent = 'Click to select token';
-        hint.style.fontSize = '0.8rem';
-        hint.style.color = '#718096';
-        hint.style.marginTop = '0.25rem';
-        tokenContainer.parentNode.insertBefore(hint, tokenContainer.nextSibling);
-    }
-}
+        function copyTokenAndClose(token) {
+            navigator.clipboard.writeText(token).then(() => {
+                const feedback = document.querySelector('.copied-feedback');
+                feedback.classList.add('visible');
+                
+                setTimeout(() => {
+                    try {
+                        window.close();
+                    } catch (e) {
+                        document.querySelector('.popup-content').innerHTML = `
+                            <div class="success-icon">
+                                <svg fill="#F4FBFF" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M3.293,20.707a1,1,0,0,1,0-1.414L17.586,5H12a1,1,0,0,1,0-2h8a1,1,0,0,1,1,1v8a1,1,0,0,1-2,0V6.414L4.707,20.707a1,1,0,0,1-1.414,0Z"/>
+                                </svg>
+                            </div>
+                            <p class="loading-text" style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                Token copied! Please manually close the pop-up by clicking the 'X' icon in the top-right corner
+                            </p>
+                        `;
+                    }
+                }, 1000);
+            }).catch(err => {
+                console.error('Failed to copy token:', err);
+            });
+        }
 </script>
 </body>
 
