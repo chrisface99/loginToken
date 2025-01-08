@@ -468,41 +468,102 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-function copyTokenAndClose(token) {
-    navigator.clipboard.writeText(token)
-        .then(() => {
-            const feedback = document.querySelector('.copied-feedback');
-            feedback.classList.add('visible');
-            
-            setTimeout(() => {
-                try {
-                    window.close();
-                } catch (e) {
-                    // If window.close() fails, show the manual close message
-                    const popupContent = document.querySelector('.popup-content');
-                    if (popupContent) {
-                        popupContent.innerHTML = `
-                            <div class="success-icon">
-                                <svg fill="#F4FBFF" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M3.293,20.707a1,1,0,0,1,0-1.414L17.586,5H12a1,1,0,0,1,0-2h8a1,1,0,0,1,1,1v8a1,1,0,0,1-2,0V6.414L4.707,20.707a1,1,0,0,1-1.414,0Z"/>
-                                </svg>
-                            </div>
-                            <p class="loading-text" style="font-size: 0.9rem; margin-top: 0.5rem;">
-                                Token copied! Please manually close the pop-up by clicking the 'X' icon in the top-right corner
-                            </p>
-                        `;
-                    }
+unction copyTokenAndClose(token) {
+    // First try using the Clipboard API
+    const copyWithAPI = () => {
+        return navigator.clipboard.writeText(token);
+    };
+
+    // Fallback method using a temporary textarea
+    const copyWithFallback = () => {
+        return new Promise((resolve, reject) => {
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = token;
+                // Make the textarea invisible but still technically on-screen
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                
+                const success = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                if (success) {
+                    resolve();
+                } else {
+                    reject(new Error('execCommand copy failed'));
                 }
-            }, 1000);
-        })
-        .catch(err => {
-            console.error('Failed to copy token:', err);
-            // Show error message to user
-            const feedback = document.querySelector('.copied-feedback');
-            feedback.textContent = 'Failed to copy token';
-            feedback.style.color = '#e53e3e';
-            feedback.classList.add('visible');
+            } catch (err) {
+                reject(err);
+            }
         });
+    };
+
+    // Try Clipboard API first, fall back to execCommand
+    (async () => {
+        try {
+            await copyWithAPI();
+        } catch (primaryError) {
+            try {
+                await copyWithFallback();
+            } catch (fallbackError) {
+                showErrorMessage('Unable to copy token. Please manually select and copy it.');
+                // Make token selectable for manual copying
+                makeTokenSelectable();
+                return;
+            }
+        }
+        
+        // If we get here, the copy succeeded
+        const feedback = document.querySelector('.copied-feedback');
+        feedback.classList.add('visible');
+        
+        setTimeout(() => {
+            try {
+                window.close();
+            } catch (e) {
+                // If window.close() fails, show the manual close message
+                const popupContent = document.querySelector('.popup-content');
+                if (popupContent) {
+                    popupContent.innerHTML = `
+                        <div class="success-icon">
+                            <svg fill="#F4FBFF" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3.293,20.707a1,1,0,0,1,0-1.414L17.586,5H12a1,1,0,0,1,0-2h8a1,1,0,0,1,1,1v8a1,1,0,0,1-2,0V6.414L4.707,20.707a1,1,0,0,1-1.414,0Z"/>
+                            </svg>
+                        </div>
+                        <p class="loading-text" style="font-size: 0.9rem; margin-top: 0.5rem;">
+                            Token copied! Please manually close the pop-up by clicking the 'X' icon in the top-right corner
+                        </p>
+                    `;
+                }
+            }
+        }, 1000);
+    })();
+}
+
+// Helper function to show error message
+function showErrorMessage(message) {
+    const feedback = document.querySelector('.copied-feedback');
+    feedback.textContent = message;
+    feedback.style.color = '#e53e3e';
+    feedback.classList.add('visible');
+}
+
+// Helper function to make token selectable
+function makeTokenSelectable() {
+    const tokenContainer = document.querySelector('.token-text');
+    if (tokenContainer) {
+        tokenContainer.style.userSelect = 'text';
+        tokenContainer.style.cursor = 'text';
+        // Add a hint for users
+        const hint = document.createElement('p');
+        hint.textContent = 'Click to select token';
+        hint.style.fontSize = '0.8rem';
+        hint.style.color = '#718096';
+        hint.style.marginTop = '0.25rem';
+        tokenContainer.parentNode.insertBefore(hint, tokenContainer.nextSibling);
+    }
 }
 </script>
 </body>
